@@ -371,88 +371,52 @@ document.getElementById("validateBtn").addEventListener("click", function() {
     submitButton.disabled = !formIsValid;  // Disable if form is not valid, enable if valid
 });
 
-// Function to get a cookie value by its name
+// --- Cookie Helper Function ---
 function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-    return null;
-  }
-  
-  // Function to set a cookie
-  function setCookie(name, value, days) {
-    const date = new Date();
-    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-    const expires = "expires=" + date.toUTCString();
-    document.cookie = `${name}=${value}; ${expires}; path=/`;  // Ensure path is set
-  }
-  
-  // Function to delete a cookie
-  function deleteCookie(name) {
-    setCookie(name, "", -1);  // Set the cookie expiration to the past to delete it
-  }
-  
-  // Check for cookie and update the greeting and form
-  window.onload = function() {
-    const firstName = getCookie("first-name");
-    
-    // If cookie exists, welcome back user
-    if (firstName) {
-      document.getElementById("greeting").textContent = `Welcome back, ${firstName}!`;
-  
-      // Show the "Not [Name]?" checkbox
-      const newUserOption = document.getElementById("newUserCheckboxContainer");
-      newUserOption.style.display = "block";
-  
-      // Handle the new user checkbox
-      document.getElementById("newUserCheckbox").addEventListener("change", function() {
-        if (this.checked) {
-          // Clear the form and cookie
-          deleteCookie("first-name");
-          document.getElementById("submitForm").reset();
-          document.getElementById("greeting").textContent = "Hello New user!";
-        }
-      });
+    if (parts.length === 2) return parts.pop().split(";").shift();
+}
+
+// --- Greeting Logic + Cookie Handling ---
+window.addEventListener("DOMContentLoaded", function () {
+    const firstNameField = document.getElementById("first-name");
+    const greeting = document.getElementById("greeting");
+    const rememberMe = document.getElementById("rememberMe");
+    const newUserBox = document.getElementById("newUserCheckboxContainer");
+    const cookieName = getCookie("firstName");
+
+    if (cookieName) {
+        greeting.textContent = `Welcome back, ${cookieName}`;
+        firstNameField.value = cookieName;
+        newUserBox.style.display = "table-cell"; // show checkbox
+
+        const placeholder = document.getElementById("cookieNamePlaceholder");
+        if (placeholder) placeholder.textContent = cookieName;
+
+        // Handle "Not [Name]?" checkbox
+        const newUserCheckbox = document.getElementById("newUserCheckbox");
+        newUserCheckbox.addEventListener("change", function () {
+            document.cookie = "firstName=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            document.getElementById("submitForm").reset();
+            location.reload();
+        });
+
     } else {
-      // If no cookie, greet new user
-      document.getElementById("greeting").textContent = "Hello New user!";
+        greeting.textContent = "Welcome new user!";
+        newUserBox.style.display = "none"; // hide checkbox
     }
-  
-    // Handle the remember me checkbox
-    const rememberMeCheckbox = document.getElementById("rememberMe");
-    rememberMeCheckbox.addEventListener("change", function() {
-      const firstNameValue = document.getElementById("first-name").value;
-  
-      if (this.checked && firstNameValue) {
-        // Save the name cookie if checked
-        setCookie("first-name", firstNameValue, 2); // Expire in 2 days
-      } else {
-        // Delete the cookie if unchecked
-        deleteCookie("first-name");
-      }
+
+    // --- On Submit: Save or Clear Cookie ---
+    document.getElementById("submitForm").addEventListener("submit", function (e) {
+        const nameValue = firstNameField.value.trim();
+
+        if (rememberMe.checked && nameValue) {
+            const expirationDate = new Date();
+            expirationDate.setTime(expirationDate.getTime() + (48 * 60 * 60 * 1000)); // 48 hrs
+            document.cookie = `firstName=${nameValue}; expires=${expirationDate.toUTCString()}; path=/`;
+        } else {
+            document.cookie = "firstName=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        }
     });
-  
-    // Prefill the First Name if cookie is found
-    if (firstName) {
-      document.getElementById("first-name").value = firstName;
-    }
-  
-    // Handle form submission
-    document.getElementById("submitForm").onsubmit = function(event) {
-      event.preventDefault(); // Prevent default submission so we can handle cookies
-      
-      const firstName = document.getElementById("first-name").value;
-      
-      if (rememberMeCheckbox.checked && firstName) {
-        // Save the name cookie
-        setCookie("first-name", firstName, 2); // Expire in 2 days
-      } else {
-        // Delete the cookie if unchecked
-        deleteCookie("first-name");
-      }
-      
-      // After handling cookies, manually submit the form to redirect to thankyou.html
-      window.location.href = "thankyou.html";
-    };
-  };
-  
+});
